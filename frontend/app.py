@@ -1,7 +1,6 @@
 import os
 import sys
 import uuid
-import textwrap
 import streamlit as st
 
 
@@ -65,13 +64,9 @@ from backend.agent import HealthcareAgent
 # =========================================================
 
 st.set_page_config(
-
     page_title="CareConnect AI",
-
     page_icon="🏥",
-
     layout="wide",
-
     initial_sidebar_state="expanded"
 )
 
@@ -130,460 +125,369 @@ if "quick_message" not in st.session_state:
 
 st.markdown(
     """
-    <style>
+<style>
 
-    /* =====================================================
-       GLOBAL
-    ===================================================== */
+/* =========================================================
+   GLOBAL APP
+   ========================================================= */
 
-    html,
-    body,
-    [data-testid="stAppViewContainer"] {
+html,
+body {
+    background-color: #f4f7fb !important;
+}
 
-        background-color: #f4f7fb !important;
+[data-testid="stAppViewContainer"] {
+    background-color: #f4f7fb !important;
+}
 
-        color: #1f2937 !important;
-    }
+[data-testid="stMain"] {
+    background-color: #f4f7fb !important;
+}
 
+.stApp {
+    background-color: #f4f7fb !important;
+}
 
-    .stApp {
+.block-container {
+    max-width: 1350px !important;
+    padding-top: 2rem !important;
+    padding-bottom: 3rem !important;
+}
 
-        background-color: #f4f7fb !important;
 
-        color: #1f2937 !important;
-    }
+/* =========================================================
+   HERO
+   ========================================================= */
 
+.hero {
+    background: linear-gradient(
+        135deg,
+        #176b68 0%,
+        #2bb5aa 100%
+    );
 
-    [data-testid="stMain"] {
+    padding: 38px 42px;
 
-        background-color: #f4f7fb !important;
-    }
+    border-radius: 24px;
 
+    margin-bottom: 30px;
 
-    .block-container {
+    box-shadow:
+        0px 12px 35px
+        rgba(22, 107, 104, 0.25);
+}
 
-        max-width: 1350px;
+.hero h1 {
+    color: #ffffff !important;
 
-        padding-top: 2rem;
+    font-size: 46px !important;
 
-        padding-bottom: 3rem;
-    }
+    font-weight: 700 !important;
 
+    margin: 0 !important;
 
-    /* =====================================================
-       HERO
-    ===================================================== */
+    padding: 0 !important;
+}
 
-    .hero {
+.hero p {
+    color: #e6fffb !important;
 
-        background: linear-gradient(
-            135deg,
-            #176b68,
-            #2bb5aa
-        );
+    font-size: 19px !important;
 
-        padding: 38px 42px;
+    line-height: 1.6 !important;
 
-        border-radius: 24px;
+    margin-top: 14px !important;
 
-        margin-bottom: 30px;
+    margin-bottom: 0 !important;
+}
 
-        box-shadow:
-            0px 12px 35px
-            rgba(22, 107, 104, 0.25);
-    }
+.status-online {
+    display: inline-block;
 
+    margin-top: 18px;
 
-    .hero h1 {
+    background-color: #d9f7eb;
 
-        color: #ffffff !important;
+    color: #176b45 !important;
 
-        font-size: 46px;
+    padding: 9px 18px;
 
-        font-weight: 700;
+    border-radius: 30px;
 
-        margin: 0;
-    }
+    font-size: 14px;
 
+    font-weight: 600;
+}
 
-    .hero p {
 
-        color: #e6fffb !important;
+/* =========================================================
+   FEATURE CARDS
+   ========================================================= */
 
-        font-size: 19px;
+.feature-card {
+    background-color: #ffffff;
 
-        margin-top: 14px;
+    border: 1px solid #dce3eb;
 
-        line-height: 1.6;
-    }
+    border-radius: 20px;
 
+    padding: 28px 24px;
 
-    .status-online {
+    min-height: 180px;
 
-        display: inline-block;
+    box-shadow:
+        0px 8px 22px
+        rgba(0, 0, 0, 0.06);
 
-        margin-top: 18px;
+    margin-bottom: 12px;
+}
 
-        background-color: #d9f7eb;
+.feature-card h3 {
+    color: #245b63 !important;
 
-        color: #176b45 !important;
+    font-size: 27px !important;
 
-        padding: 9px 18px;
+    font-weight: 700 !important;
 
-        border-radius: 30px;
+    margin-top: 0 !important;
 
-        font-size: 14px;
+    margin-bottom: 18px !important;
+}
 
-        font-weight: 600;
-    }
+.feature-card p {
+    color: #596579 !important;
 
+    font-size: 16px !important;
 
-    /* =====================================================
-       FEATURE CARDS
-    ===================================================== */
+    line-height: 1.6 !important;
 
-    .feature-card {
+    margin: 0 !important;
+}
 
-        background-color: #ffffff !important;
 
-        border: 1px solid #dce3eb;
+/* =========================================================
+   BUTTONS
+   ========================================================= */
 
-        border-radius: 20px;
+.stButton > button {
+    width: 100% !important;
 
-        padding: 28px 24px;
+    background-color: #176b68 !important;
 
-        min-height: 180px;
+    color: #ffffff !important;
 
-        box-shadow:
-            0px 8px 22px
-            rgba(0, 0, 0, 0.06);
+    border: none !important;
 
-        margin-bottom: 12px;
-    }
+    border-radius: 12px !important;
 
+    padding: 11px 15px !important;
 
-    .feature-card h3 {
+    font-size: 15px !important;
 
-        color: #245b63 !important;
+    font-weight: 600 !important;
 
-        font-size: 27px;
+    transition: 0.2s ease !important;
+}
 
-        font-weight: 700;
+.stButton > button:hover {
+    background-color: #115754 !important;
 
-        margin-bottom: 18px;
-    }
+    color: #ffffff !important;
 
+    transform: translateY(-1px);
+}
 
-    .feature-card p {
 
-        color: #596579 !important;
+/* =========================================================
+   CHAT HEADER
+   ========================================================= */
 
-        font-size: 16px;
+.chat-header {
+    color: #1f2937 !important;
 
-        line-height: 1.6;
-    }
+    font-size: 27px;
 
+    font-weight: 700;
 
-    /* =====================================================
-       BUTTONS
-    ===================================================== */
+    margin-top: 35px;
 
-    .stButton > button {
+    margin-bottom: 18px;
+}
 
-        width: 100% !important;
 
-        background-color: #176b68 !important;
+/* =========================================================
+   CHAT MESSAGES
+   ========================================================= */
 
-        color: #ffffff !important;
+[data-testid="stChatMessage"] {
+    background-color: #ffffff !important;
 
-        border: none !important;
+    border: 1px solid #e2e8f0 !important;
 
-        border-radius: 12px !important;
+    border-radius: 16px !important;
 
-        padding: 11px 15px !important;
+    padding: 16px !important;
 
-        font-size: 15px !important;
+    margin-bottom: 14px !important;
 
-        font-weight: 600 !important;
+    box-shadow:
+        0px 3px 10px
+        rgba(0, 0, 0, 0.04);
+}
 
-        transition: 0.2s;
-    }
+[data-testid="stChatMessage"] p {
+    color: #1f2937 !important;
+}
 
 
-    .stButton > button:hover {
+/* =========================================================
+   CHAT INPUT
+   ========================================================= */
 
-        background-color: #115754 !important;
+[data-testid="stChatInput"] {
+    background-color: #ffffff !important;
 
-        color: #ffffff !important;
+    border: 2px solid #cbd5e1 !important;
 
-        transform: translateY(-1px);
-    }
+    border-radius: 16px !important;
 
+    padding: 5px !important;
 
-    /* =====================================================
-       CHAT HEADER
-    ===================================================== */
+    box-shadow:
+        0px 4px 15px
+        rgba(0, 0, 0, 0.08);
+}
 
-    .chat-header {
+[data-testid="stChatInput"] textarea {
+    background-color: #ffffff !important;
 
-        color: #1f2937 !important;
+    color: #111827 !important;
 
-        font-size: 27px;
+    caret-color: #111827 !important;
 
-        font-weight: 700;
+    opacity: 1 !important;
+}
 
-        margin-top: 35px;
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #64748b !important;
 
-        margin-bottom: 18px;
-    }
+    opacity: 1 !important;
+}
 
+[data-testid="stChatInput"] button {
+    background-color: #176b68 !important;
 
-    /* =====================================================
-       CHAT MESSAGES
-    ===================================================== */
+    color: #ffffff !important;
 
-    [data-testid="stChatMessage"] {
+    border-radius: 10px !important;
+}
 
-        background-color: #ffffff !important;
 
-        border: 1px solid #e2e8f0 !important;
+/* =========================================================
+   ALERTS
+   ========================================================= */
 
-        border-radius: 16px !important;
+[data-testid="stAlert"] {
+    border-radius: 12px !important;
+}
 
-        padding: 16px !important;
 
-        margin-bottom: 14px !important;
+/* =========================================================
+   EXPANDER
+   ========================================================= */
 
-        box-shadow:
-            0px 3px 10px
-            rgba(0, 0, 0, 0.04);
-    }
+[data-testid="stExpander"] {
+    background-color: #ffffff !important;
 
+    border: 1px solid #dce3eb !important;
 
-    [data-testid="stChatMessage"] p,
-    [data-testid="stChatMessage"] span,
-    [data-testid="stChatMessage"] div {
+    border-radius: 12px !important;
+}
 
-        color: #1f2937 !important;
-    }
 
+/* =========================================================
+   METRICS
+   ========================================================= */
 
-    /* =====================================================
-       CHAT INPUT
-    ===================================================== */
+[data-testid="stMetricLabel"] {
+    color: #64748b !important;
+}
 
-    [data-testid="stChatInput"] {
+[data-testid="stMetricValue"] {
+    color: #176b68 !important;
+}
 
-        background-color: #ffffff !important;
 
-        border: 2px solid #cbd5e1 !important;
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
-        border-radius: 16px !important;
+[data-testid="stSidebar"] {
+    background-color: #0f172a !important;
+}
 
-        padding: 5px !important;
+[data-testid="stSidebar"] * {
+    color: #e2e8f0 !important;
+}
 
-        box-shadow:
-            0px 4px 15px
-            rgba(0, 0, 0, 0.08);
-    }
+.sidebar-card {
+    background-color: #1e293b;
 
+    padding: 18px;
 
-    [data-testid="stChatInput"] textarea {
+    border-radius: 15px;
 
-        background-color: #ffffff !important;
+    margin-top: 15px;
 
-        color: #111827 !important;
+    margin-bottom: 20px;
 
-        caret-color: #111827 !important;
+    border: 1px solid #334155;
+}
 
-        opacity: 1 !important;
-    }
+.sidebar-card h3 {
+    color: #ffffff !important;
 
+    margin-top: 0 !important;
+}
 
-    [data-testid="stChatInput"] textarea::placeholder {
+.sidebar-card p {
+    color: #cbd5e1 !important;
 
-        color: #64748b !important;
+    margin: 10px 0 !important;
+}
 
-        opacity: 1 !important;
-    }
 
+/* =========================================================
+   FOOTER
+   ========================================================= */
 
-    [data-testid="stChatInput"] > div,
-    [data-testid="stChatInput"] div {
+.footer {
+    text-align: center;
 
-        background-color: transparent !important;
-    }
+    color: #64748b !important;
 
+    margin-top: 50px;
 
-    [data-testid="stChatInput"] button {
+    font-size: 14px;
 
-        background-color: #176b68 !important;
+    padding-bottom: 20px;
+}
 
-        color: #ffffff !important;
 
-        border-radius: 10px !important;
-    }
+/* =========================================================
+   HIDE STREAMLIT DEFAULTS
+   ========================================================= */
 
+#MainMenu {
+    visibility: hidden;
+}
 
-    [data-testid="stChatInput"] button svg {
+footer {
+    visibility: hidden;
+}
 
-        fill: #ffffff !important;
-
-        color: #ffffff !important;
-    }
-
-
-    /* =====================================================
-       ALERTS
-    ===================================================== */
-
-    [data-testid="stAlert"] {
-
-        background-color: #eff6ff !important;
-
-        color: #1e3a5f !important;
-
-        border-radius: 12px !important;
-    }
-
-
-    [data-testid="stAlert"] p,
-    [data-testid="stAlert"] span,
-    [data-testid="stAlert"] div {
-
-        color: #1e3a5f !important;
-    }
-
-
-    /* =====================================================
-       EXPANDER
-    ===================================================== */
-
-    [data-testid="stExpander"] {
-
-        background-color: #ffffff !important;
-
-        border: 1px solid #dce3eb !important;
-
-        border-radius: 12px !important;
-    }
-
-
-    /* =====================================================
-       METRICS
-    ===================================================== */
-
-    [data-testid="stMetricLabel"] {
-
-        color: #64748b !important;
-    }
-
-
-    [data-testid="stMetricValue"] {
-
-        color: #176b68 !important;
-    }
-
-
-    /* =====================================================
-       JSON
-    ===================================================== */
-
-    [data-testid="stJson"] {
-
-        background-color: #f8fafc !important;
-
-        color: #111827 !important;
-
-        border-radius: 10px !important;
-
-        border: 1px solid #d1d5db !important;
-    }
-
-
-    /* =====================================================
-       SIDEBAR
-    ===================================================== */
-
-    [data-testid="stSidebar"] {
-
-        background-color: #0f172a !important;
-    }
-
-
-    [data-testid="stSidebar"] * {
-
-        color: #e2e8f0 !important;
-    }
-
-
-    [data-testid="stSidebar"] .stButton button {
-
-        background-color: #176b68 !important;
-
-        color: #ffffff !important;
-    }
-
-
-    .sidebar-card {
-
-        background-color: #1e293b !important;
-
-        padding: 18px;
-
-        border-radius: 15px;
-
-        margin-top: 15px;
-
-        margin-bottom: 20px;
-
-        border: 1px solid #334155;
-    }
-
-
-    .sidebar-card h3 {
-
-        color: #ffffff !important;
-    }
-
-
-    .sidebar-card p {
-
-        color: #cbd5e1 !important;
-    }
-
-
-    /* =====================================================
-       FOOTER
-    ===================================================== */
-
-    .footer {
-
-        text-align: center;
-
-        color: #64748b !important;
-
-        margin-top: 50px;
-
-        font-size: 14px;
-
-        padding-bottom: 20px;
-    }
-
-
-    #MainMenu {
-
-        visibility: hidden;
-    }
-
-
-    footer {
-
-        visibility: hidden;
-    }
-
-    </style>
-    """,
+</style>
+""",
     unsafe_allow_html=True
 )
 
@@ -601,7 +505,9 @@ with st.sidebar:
     st.divider()
 
 
-    # Agent status
+    # -----------------------------------------------------
+    # AGENT STATUS
+    # -----------------------------------------------------
 
     if agent_online:
 
@@ -618,9 +524,11 @@ with st.sidebar:
                 st.code(agent_error)
 
 
-    # Capabilities
+    # -----------------------------------------------------
+    # CAPABILITIES
+    # -----------------------------------------------------
 
-    st.markdown(
+    st.html(
         """
         <div class="sidebar-card">
 
@@ -639,15 +547,16 @@ with st.sidebar:
             <p>✓ Conversation Task Creation</p>
 
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
+    # -----------------------------------------------------
+    # QUICK ACTIONS
+    # -----------------------------------------------------
+
     st.markdown("### ⚡ Quick Actions")
 
-
-    # Appointment
 
     if st.button(
         "📅 Request Appointment",
@@ -661,8 +570,6 @@ with st.sidebar:
         st.rerun()
 
 
-    # Services
-
     if st.button(
         "🏥 Clinic Services",
         key="sidebar_services"
@@ -674,8 +581,6 @@ with st.sidebar:
 
         st.rerun()
 
-
-    # Timings
 
     if st.button(
         "🕒 Clinic Timings",
@@ -692,7 +597,9 @@ with st.sidebar:
     st.divider()
 
 
-    # Clear
+    # -----------------------------------------------------
+    # CLEAR CONVERSATION
+    # -----------------------------------------------------
 
     if st.button(
         "🗑️ Clear Conversation",
@@ -732,26 +639,23 @@ else:
     status_text = "🔴 AI Agent Initialization Failed"
 
 
-st.markdown(
-    textwrap.dedent(
-        f"""
-        <div class="hero">
+st.html(
+    f"""
+    <div class="hero">
 
-            <h1>🏥 CareConnect AI</h1>
+        <h1>🏥 CareConnect AI</h1>
 
-            <p>
-                Your intelligent healthcare assistant for
-                clinic information and appointment support.
-            </p>
+        <p>
+            Your intelligent healthcare assistant for
+            clinic information and appointment support.
+        </p>
 
-            <div class="status-online">
-                {status_text}
-            </div>
-
+        <div class="status-online">
+            {status_text}
         </div>
-        """
-    ),
-    unsafe_allow_html=True
+
+    </div>
+    """
 )
 
 
@@ -768,22 +672,19 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
 
-    st.markdown(
-        textwrap.dedent(
-            """
-            <div class="feature-card">
+    st.html(
+        """
+        <div class="feature-card">
 
-                <h3>💬 Ask Questions</h3>
+            <h3>💬 Ask Questions</h3>
 
-                <p>
-                    Get instant answers about clinic services,
-                    locations, timings and more.
-                </p>
+            <p>
+                Get instant answers about clinic services,
+                locations, timings and more.
+            </p>
 
-            </div>
-            """
-        ),
-        unsafe_allow_html=True
+        </div>
+        """
     )
 
 
@@ -800,27 +701,24 @@ with col1:
 
 
 # =========================================================
-# BOOK APPOINTMENT
+# BOOK APPOINTMENTS
 # =========================================================
 
 with col2:
 
-    st.markdown(
-        textwrap.dedent(
-            """
-            <div class="feature-card">
+    st.html(
+        """
+        <div class="feature-card">
 
-                <h3>📅 Book Appointments</h3>
+            <h3>📅 Book Appointments</h3>
 
-                <p>
-                    Request an appointment directly through
-                    our AI assistant.
-                </p>
+            <p>
+                Request an appointment directly through
+                our AI assistant.
+            </p>
 
-            </div>
-            """
-        ),
-        unsafe_allow_html=True
+        </div>
+        """
     )
 
 
@@ -842,22 +740,19 @@ with col2:
 
 with col3:
 
-    st.markdown(
-        textwrap.dedent(
-            """
-            <div class="feature-card">
+    st.html(
+        """
+        <div class="feature-card">
 
-                <h3>🧠 Smart Patient Support</h3>
+            <h3>🧠 Smart Patient Support</h3>
 
-                <p>
-                    Our AI understands whether you're a new
-                    or existing patient.
-                </p>
+            <p>
+                Our AI understands whether you're a new
+                or existing patient.
+            </p>
 
-            </div>
-            """
-        ),
-        unsafe_allow_html=True
+        </div>
+        """
     )
 
 
@@ -878,9 +773,12 @@ with col3:
 # CHAT HEADER
 # =========================================================
 
-st.markdown(
-    '<div class="chat-header">💬 Chat with CareConnect AI</div>',
-    unsafe_allow_html=True
+st.html(
+    """
+    <div class="chat-header">
+        💬 Chat with CareConnect AI
+    </div>
+    """
 )
 
 
@@ -928,7 +826,9 @@ for message in st.session_state.messages:
 user_input = None
 
 
-# Quick action
+# ---------------------------------------------------------
+# QUICK ACTION
+# ---------------------------------------------------------
 
 if st.session_state.quick_message:
 
@@ -939,7 +839,9 @@ if st.session_state.quick_message:
     st.session_state.quick_message = None
 
 
-# Normal chat
+# ---------------------------------------------------------
+# NORMAL CHAT
+# ---------------------------------------------------------
 
 chat_input = st.chat_input(
     "Ask about our clinic or request an appointment..."
@@ -952,13 +854,13 @@ if chat_input:
 
 
 # =========================================================
-# PROCESS USER MESSAGE
+# PROCESS MESSAGE
 # =========================================================
 
 if user_input:
 
     # -----------------------------------------------------
-    # Save user message
+    # SAVE USER MESSAGE
     # -----------------------------------------------------
 
     st.session_state.messages.append(
@@ -970,7 +872,7 @@ if user_input:
 
 
     # -----------------------------------------------------
-    # Display user
+    # DISPLAY USER MESSAGE
     # -----------------------------------------------------
 
     with st.chat_message("user"):
@@ -979,7 +881,7 @@ if user_input:
 
 
     # -----------------------------------------------------
-    # Assistant
+    # AI RESPONSE
     # -----------------------------------------------------
 
     with st.chat_message("assistant"):
@@ -1005,15 +907,16 @@ if user_input:
 
                     data = agent.chat(
 
-                        session_id=
-                            st.session_state.session_id,
+                        session_id=(
+                            st.session_state.session_id
+                        ),
 
                         message=user_input
                     )
 
 
                     # -----------------------------------------
-                    # RESPONSE
+                    # ANSWER
                     # -----------------------------------------
 
                     answer = data.get(
@@ -1029,7 +932,7 @@ if user_input:
 
 
                     # -----------------------------------------
-                    # AGENT DETAILS
+                    # AGENT DECISION DETAILS
                     # -----------------------------------------
 
                     with st.expander(
@@ -1098,7 +1001,9 @@ if user_input:
                             )
 
 
-                        # Appointment information
+                        # -------------------------------------
+                        # APPOINTMENT DATA
+                        # -------------------------------------
 
                         appointment_data = (
                             data.get(
@@ -1113,13 +1018,14 @@ if user_input:
                                 "### 📋 Appointment Information"
                             )
 
-
                             st.json(
                                 appointment_data
                             )
 
 
-                        # Salesforce information
+                        # -------------------------------------
+                        # SALESFORCE
+                        # -------------------------------------
 
                         lead_id = data.get(
                             "lead_id"
@@ -1141,12 +1047,13 @@ if user_input:
                         if task_created:
 
                             st.success(
-                                "Salesforce conversation Task created successfully."
+                                "Salesforce conversation Task "
+                                "created successfully."
                             )
 
 
                     # -----------------------------------------
-                    # SAVE ASSISTANT MESSAGE
+                    # SAVE AI MESSAGE
                     # -----------------------------------------
 
                     st.session_state.messages.append(
@@ -1171,20 +1078,17 @@ if user_input:
 # FOOTER
 # =========================================================
 
-st.markdown(
-    textwrap.dedent(
-        """
-        <div class="footer">
+st.html(
+    """
+    <div class="footer">
 
-            <b>CareConnect AI</b>
-            • Intelligent Healthcare Assistant
+        <b>CareConnect AI</b>
+        • Intelligent Healthcare Assistant
 
-            <br><br>
+        <br><br>
 
-            Powered by RAG • AI Agents • Salesforce
+        Powered by RAG • AI Agents • Salesforce
 
-        </div>
-        """
-    ),
-    unsafe_allow_html=True
+    </div>
+    """
 )
