@@ -1,12 +1,13 @@
 import os
 import sys
 import uuid
+
 import streamlit as st
 
 
-# =========================================================
+# ============================================================
 # PROJECT PATH
-# =========================================================
+# ============================================================
 
 ROOT_DIR = os.path.abspath(
     os.path.join(
@@ -19,11 +20,11 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 
-# =========================================================
+# ============================================================
 # LOAD STREAMLIT SECRETS
-# =========================================================
+# ============================================================
 
-def load_streamlit_secrets():
+def load_secrets():
 
     secret_names = [
         "OPENAI_API_KEY",
@@ -49,45 +50,186 @@ def load_streamlit_secrets():
             pass
 
 
-load_streamlit_secrets()
+load_secrets()
 
 
-# =========================================================
+# ============================================================
 # IMPORT AGENT
-# =========================================================
+# ============================================================
 
-from backend.agent import HealthcareAgent
+try:
+
+    from backend.agent import HealthcareAgent
+
+except Exception as error:
+
+    HealthcareAgent = None
+
+    IMPORT_ERROR = str(error)
 
 
-# =========================================================
+# ============================================================
 # PAGE CONFIG
-# =========================================================
+# ============================================================
 
 st.set_page_config(
-
     page_title="CareConnect AI",
-
     page_icon="🏥",
-
     layout="wide",
-
     initial_sidebar_state="expanded"
 )
 
 
-# =========================================================
-# INITIALIZE AGENT
-# =========================================================
+# ============================================================
+# SIMPLE CSS
+# No HTML UI is used anywhere below.
+# ============================================================
+
+st.markdown(
+    """
+    <style>
+
+    /* Main application */
+
+    .stApp {
+        background-color: #f5f7fb;
+    }
+
+    /* Sidebar */
+
+    section[data-testid="stSidebar"] {
+        background-color: #0f172a;
+    }
+
+    section[data-testid="stSidebar"] * {
+        color: #e5edf7;
+    }
+
+    /* Main headings */
+
+    h1 {
+        color: #164e63 !important;
+    }
+
+    h2 {
+        color: #164e63 !important;
+    }
+
+    h3 {
+        color: #155e75 !important;
+    }
+
+    /* Normal text */
+
+    p {
+        color: #334155;
+    }
+
+    /* Buttons */
+
+    .stButton > button {
+        width: 100%;
+        border-radius: 10px;
+        min-height: 44px;
+        background-color: #0f766e;
+        color: white;
+        border: 1px solid #0f766e;
+        font-weight: 600;
+    }
+
+    .stButton > button:hover {
+        background-color: #115e59;
+        border-color: #115e59;
+        color: white;
+    }
+
+    /* Chat input */
+
+    [data-testid="stChatInput"] {
+        background-color: white;
+        border: 2px solid #cbd5e1;
+        border-radius: 14px;
+    }
+
+    [data-testid="stChatInput"] textarea {
+        color: #111827 !important;
+        background-color: white !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #64748b !important;
+        opacity: 1 !important;
+    }
+
+    /* Chat messages */
+
+    [data-testid="stChatMessage"] {
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    [data-testid="stChatMessage"] p,
+    [data-testid="stChatMessage"] li,
+    [data-testid="stChatMessage"] span {
+        color: #1e293b !important;
+    }
+
+    /* Metrics */
+
+    [data-testid="stMetric"] {
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    [data-testid="stMetricValue"] {
+        color: #0f766e !important;
+    }
+
+    /* Expanders */
+
+    [data-testid="stExpander"] {
+        background-color: white;
+        border: 1px solid #dbe3ec;
+        border-radius: 12px;
+    }
+
+    /* Alerts */
+
+    [data-testid="stAlert"] {
+        border-radius: 12px;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ============================================================
+# LOAD AGENT
+# ============================================================
 
 @st.cache_resource
-def get_agent():
+def load_agent():
+
+    if HealthcareAgent is None:
+
+        raise RuntimeError(
+            IMPORT_ERROR
+        )
 
     return HealthcareAgent()
 
 
 try:
 
-    agent = get_agent()
+    agent = load_agent()
 
     agent_online = True
 
@@ -102,9 +244,9 @@ except Exception as error:
     agent_error = str(error)
 
 
-# =========================================================
+# ============================================================
 # SESSION STATE
-# =========================================================
+# ============================================================
 
 if "session_id" not in st.session_state:
 
@@ -123,470 +265,100 @@ if "quick_message" not in st.session_state:
     st.session_state.quick_message = None
 
 
-# =========================================================
-# CUSTOM CSS
-# =========================================================
-
-st.markdown(
-    """
-<style>
-
-/* =========================================================
-   GLOBAL
-   ========================================================= */
-
-html,
-body {
-
-    background-color: #f4f7fb !important;
-
-}
-
-[data-testid="stAppViewContainer"] {
-
-    background-color: #f4f7fb !important;
-
-}
-
-[data-testid="stMain"] {
-
-    background-color: #f4f7fb !important;
-
-}
-
-.stApp {
-
-    background-color: #f4f7fb !important;
-
-}
-
-.block-container {
-
-    max-width: 1350px !important;
-
-    padding-top: 2rem !important;
-
-    padding-bottom: 3rem !important;
-
-}
-
-
-/* =========================================================
-   HERO
-   ========================================================= */
-
-.hero {
-
-    background: linear-gradient(
-        135deg,
-        #176b68 0%,
-        #2bb5aa 100%
-    );
-
-    padding: 40px 44px;
-
-    border-radius: 24px;
-
-    margin-bottom: 30px;
-
-    box-shadow:
-        0px 12px 35px
-        rgba(22, 107, 104, 0.25);
-
-}
-
-.hero h1 {
-
-    color: #ffffff !important;
-
-    font-size: 46px !important;
-
-    font-weight: 700 !important;
-
-    margin: 0 !important;
-
-}
-
-.hero p {
-
-    color: #e6fffb !important;
-
-    font-size: 19px !important;
-
-    line-height: 1.6 !important;
-
-    margin-top: 14px !important;
-
-}
-
-.status-online {
-
-    display: inline-block;
-
-    margin-top: 18px;
-
-    background-color: #d9f7eb;
-
-    color: #176b45 !important;
-
-    padding: 9px 18px;
-
-    border-radius: 30px;
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-}
-
-
-/* =========================================================
-   FEATURE CARDS
-   ========================================================= */
-
-.feature-card {
-
-    background-color: #ffffff;
-
-    border: 1px solid #dce3eb;
-
-    border-radius: 20px;
-
-    padding: 28px 24px;
-
-    min-height: 180px;
-
-    box-shadow:
-        0px 8px 22px
-        rgba(0, 0, 0, 0.06);
-
-    margin-bottom: 12px;
-
-}
-
-.feature-card h3 {
-
-    color: #245b63 !important;
-
-    font-size: 27px !important;
-
-    font-weight: 700 !important;
-
-    margin-top: 0 !important;
-
-    margin-bottom: 18px !important;
-
-}
-
-.feature-card p {
-
-    color: #596579 !important;
-
-    font-size: 16px !important;
-
-    line-height: 1.6 !important;
-
-    margin: 0 !important;
-
-}
-
-
-/* =========================================================
-   BUTTONS
-   ========================================================= */
-
-.stButton > button {
-
-    width: 100% !important;
-
-    background-color: #176b68 !important;
-
-    color: #ffffff !important;
-
-    border: none !important;
-
-    border-radius: 12px !important;
-
-    padding: 11px 15px !important;
-
-    font-size: 15px !important;
-
-    font-weight: 600 !important;
-
-    transition: 0.2s ease !important;
-
-}
-
-.stButton > button:hover {
-
-    background-color: #115754 !important;
-
-    color: #ffffff !important;
-
-    transform: translateY(-1px);
-
-}
-
-
-/* =========================================================
-   CHAT HEADER
-   ========================================================= */
-
-.chat-header {
-
-    color: #1f2937 !important;
-
-    font-size: 27px;
-
-    font-weight: 700;
-
-    margin-top: 35px;
-
-    margin-bottom: 18px;
-
-}
-
-
-/* =========================================================
-   CHAT
-   ========================================================= */
-
-[data-testid="stChatMessage"] {
-
-    background-color: #ffffff !important;
-
-    border: 1px solid #e2e8f0 !important;
-
-    border-radius: 16px !important;
-
-    padding: 16px !important;
-
-    margin-bottom: 14px !important;
-
-    box-shadow:
-        0px 3px 10px
-        rgba(0, 0, 0, 0.04);
-
-}
-
-[data-testid="stChatMessage"] p {
-
-    color: #1f2937 !important;
-
-}
-
-
-/* =========================================================
-   CHAT INPUT
-   ========================================================= */
-
-[data-testid="stChatInput"] {
-
-    background-color: #ffffff !important;
-
-    border: 2px solid #cbd5e1 !important;
-
-    border-radius: 16px !important;
-
-    padding: 5px !important;
-
-    box-shadow:
-        0px 4px 15px
-        rgba(0, 0, 0, 0.08);
-
-}
-
-[data-testid="stChatInput"] textarea {
-
-    background-color: #ffffff !important;
-
-    color: #111827 !important;
-
-    caret-color: #111827 !important;
-
-    opacity: 1 !important;
-
-}
-
-[data-testid="stChatInput"] textarea::placeholder {
-
-    color: #64748b !important;
-
-    opacity: 1 !important;
-
-}
-
-[data-testid="stChatInput"] button {
-
-    background-color: #176b68 !important;
-
-    color: #ffffff !important;
-
-    border-radius: 10px !important;
-
-}
-
-
-/* =========================================================
-   SIDEBAR
-   ========================================================= */
-
-[data-testid="stSidebar"] {
-
-    background-color: #0f172a !important;
-
-}
-
-[data-testid="stSidebar"] * {
-
-    color: #e2e8f0 !important;
-
-}
-
-.sidebar-card {
-
-    background-color: #1e293b;
-
-    padding: 18px;
-
-    border-radius: 15px;
-
-    margin-top: 15px;
-
-    margin-bottom: 20px;
-
-    border: 1px solid #334155;
-
-}
-
-.sidebar-card h3 {
-
-    color: #ffffff !important;
-
-    margin-top: 0 !important;
-
-}
-
-.sidebar-card p {
-
-    color: #cbd5e1 !important;
-
-    margin: 10px 0 !important;
-
-}
-
-
-/* =========================================================
-   FOOTER
-   ========================================================= */
-
-.footer {
-
-    text-align: center;
-
-    color: #64748b !important;
-
-    margin-top: 50px;
-
-    font-size: 14px;
-
-    padding-bottom: 20px;
-
-}
-
-
-/* =========================================================
-   HIDE STREAMLIT DEFAULT
-   ========================================================= */
-
-#MainMenu {
-
-    visibility: hidden;
-
-}
-
-footer {
-
-    visibility: hidden;
-
-}
-
-</style>
-""",
-    unsafe_allow_html=True
-)
-
-
-# =========================================================
+# ============================================================
 # SIDEBAR
-# =========================================================
+# ============================================================
 
 with st.sidebar:
 
+    # --------------------------------------------------------
+    # BRAND
+    # --------------------------------------------------------
+
     st.title("🏥 CareConnect")
 
-    st.caption("AI Healthcare Platform")
+    st.caption(
+        "AI Healthcare Platform"
+    )
 
     st.divider()
 
 
-    # -----------------------------------------------------
+    # --------------------------------------------------------
     # STATUS
-    # -----------------------------------------------------
+    # --------------------------------------------------------
 
     if agent_online:
 
-        st.success("🟢 AI Agent Online")
+        st.success(
+            "🟢 AI Agent Online"
+        )
 
     else:
 
-        st.error("🔴 AI Agent Error")
+        st.error(
+            "🔴 AI Agent Offline"
+        )
 
         if agent_error:
 
-            with st.expander("View Error"):
+            with st.expander(
+                "Technical Error"
+            ):
 
-                st.code(agent_error)
+                st.code(
+                    agent_error
+                )
 
 
-    # -----------------------------------------------------
-    # AI CAPABILITIES
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # CAPABILITIES
+    # --------------------------------------------------------
 
-    st.markdown(
-        """
-        <div class="sidebar-card">
+    st.subheader(
+        "🤖 AI Capabilities"
+    )
 
-            <h3>🤖 AI Capabilities</h3>
+    st.write(
+        "✓ Clinic Knowledge Assistant"
+    )
 
-            <p>✓ Clinic Knowledge Assistant</p>
+    st.write(
+        "✓ Doctors & Specialties"
+    )
 
-            <p>✓ Doctor & Specialty Information</p>
+    st.write(
+        "✓ Appointment Requests"
+    )
 
-            <p>✓ Appointment Requests</p>
+    st.write(
+        "✓ New / Existing Patient Detection"
+    )
 
-            <p>✓ Patient Type Detection</p>
+    st.write(
+        "✓ Salesforce Lead Integration"
+    )
 
-            <p>✓ Salesforce Lead Integration</p>
+    st.write(
+        "✓ Hot / Warm / Cold Lead Scoring"
+    )
 
-            <p>✓ Hot / Warm / Cold Lead Scoring</p>
-
-            <p>✓ Conversation Task Creation</p>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.write(
+        "✓ Conversation Task Creation"
     )
 
 
-    # -----------------------------------------------------
+    st.divider()
+
+
+    # --------------------------------------------------------
     # QUICK ACTIONS
-    # -----------------------------------------------------
+    # --------------------------------------------------------
 
-    st.markdown("### ⚡ Quick Actions")
+    st.subheader(
+        "⚡ Quick Actions"
+    )
 
-
-    # Appointment
 
     if st.button(
         "📅 Request Appointment",
@@ -600,11 +372,9 @@ with st.sidebar:
         st.rerun()
 
 
-    # Clinic services / doctors
-
     if st.button(
         "👨‍⚕️ Doctors & Specialties",
-        key="sidebar_services"
+        key="sidebar_doctors"
     ):
 
         st.session_state.quick_message = (
@@ -615,7 +385,18 @@ with st.sidebar:
         st.rerun()
 
 
-    # Timings
+    if st.button(
+        "🏥 Clinic Services",
+        key="sidebar_services"
+    ):
+
+        st.session_state.quick_message = (
+            "What services and medical specialties "
+            "are available at the clinic?"
+        )
+
+        st.rerun()
+
 
     if st.button(
         "🕒 Clinic Timings",
@@ -632,11 +413,9 @@ with st.sidebar:
     st.divider()
 
 
-    # Clear conversation
-
     if st.button(
         "🗑️ Clear Conversation",
-        key="clear_chat"
+        key="sidebar_clear"
     ):
 
         st.session_state.messages = []
@@ -652,78 +431,77 @@ with st.sidebar:
 
     st.divider()
 
-
     st.caption(
         "CareConnect AI provides clinic information "
         "and appointment assistance."
     )
 
 
-# =========================================================
-# HERO
-# =========================================================
+# ============================================================
+# MAIN HEADER
+# ============================================================
 
-if agent_online:
+st.title(
+    "🏥 CareConnect AI"
+)
 
-    status_text = "🟢 AI Assistant Ready"
+st.subheader(
+    "Your intelligent healthcare assistant"
+)
 
-else:
-
-    status_text = "🔴 AI Agent Initialization Failed"
-
-
-st.html(
-    f"""
-    <div class="hero">
-
-        <h1>🏥 CareConnect AI</h1>
-
-        <p>
-            Your intelligent healthcare assistant for
-            clinic information and appointment support.
-        </p>
-
-        <div class="status-online">
-            {status_text}
-        </div>
-
-    </div>
-    """
+st.write(
+    "Get information about clinic services, doctors, "
+    "medical specialties, timings, and appointment support."
 )
 
 
-# =========================================================
-# FEATURE CARDS
-# =========================================================
+# ============================================================
+# STATUS
+# ============================================================
+
+if agent_online:
+
+    st.success(
+        "🟢 AI Assistant Ready"
+    )
+
+else:
+
+    st.error(
+        "🔴 AI Assistant could not be initialized."
+    )
+
+
+# ============================================================
+# FEATURE SECTION
+# ============================================================
+
+st.markdown(
+    "## How can I help you today?"
+)
+
 
 col1, col2, col3 = st.columns(3)
 
 
-# =========================================================
-# CARD 1
-# =========================================================
+# ============================================================
+# ASK QUESTIONS
+# ============================================================
 
 with col1:
 
-    st.html(
-        """
-        <div class="feature-card">
-
-            <h3>💬 Ask Questions</h3>
-
-            <p>
-                Get instant answers about clinic services,
-                doctors, specialties, locations and timings.
-            </p>
-
-        </div>
-        """
+    st.markdown(
+        "### 💬 Ask Questions"
     )
 
+    st.write(
+        "Get quick answers about clinic services, "
+        "doctors, specialties, locations and timings."
+    )
 
     if st.button(
-        "💬 Ask About the Clinic",
-        key="ask_question"
+        "Ask the AI",
+        key="ask_ai"
     ):
 
         st.session_state.quick_message = (
@@ -734,31 +512,24 @@ with col1:
         st.rerun()
 
 
-# =========================================================
-# CARD 2
-# =========================================================
+# ============================================================
+# APPOINTMENTS
+# ============================================================
 
 with col2:
 
-    st.html(
-        """
-        <div class="feature-card">
-
-            <h3>📅 Book Appointments</h3>
-
-            <p>
-                Request an appointment with the medical
-                specialty that you need.
-            </p>
-
-        </div>
-        """
+    st.markdown(
+        "### 📅 Book Appointment"
     )
 
+    st.write(
+        "Request a consultation and provide your "
+        "details for the clinic team."
+    )
 
     if st.button(
-        "📅 Book Appointment",
-        key="book_appointment"
+        "Start Appointment",
+        key="start_appointment"
     ):
 
         st.session_state.quick_message = (
@@ -768,103 +539,174 @@ with col2:
         st.rerun()
 
 
-# =========================================================
-# CARD 3
-# =========================================================
+# ============================================================
+# PATIENT SUPPORT
+# ============================================================
 
 with col3:
 
-    st.html(
-        """
-        <div class="feature-card">
-
-            <h3>🧠 Smart Patient Support</h3>
-
-            <p>
-                Our AI understands whether you're a new
-                or existing patient and guides you accordingly.
-            </p>
-
-        </div>
-        """
+    st.markdown(
+        "### 🧠 Smart Patient Support"
     )
 
+    st.write(
+        "The assistant distinguishes new and existing "
+        "patients and guides them accordingly."
+    )
 
     if st.button(
-        "🧠 Patient Support",
-        key="patient_support"
+        "Get Support",
+        key="get_support"
     ):
 
         st.session_state.quick_message = (
-            "I need help as a patient. "
             "How do you support new and existing patients?"
         )
 
         st.rerun()
 
 
-# =========================================================
-# CHAT HEADER
-# =========================================================
+# ============================================================
+# DOCTOR / SPECIALTY SHORTCUTS
+# ============================================================
 
-st.html(
-    """
-    <div class="chat-header">
-        💬 Chat with CareConnect AI
-    </div>
-    """
+st.markdown(
+    "## 👨‍⚕️ Find a Doctor or Specialty"
+)
+
+st.write(
+    "Ask CareConnect about the specialties available "
+    "at your clinic."
 )
 
 
-# =========================================================
-# WELCOME
-# =========================================================
+specialty1, specialty2, specialty3, specialty4 = (
+    st.columns(4)
+)
+
+
+with specialty1:
+
+    if st.button(
+        "🦷 Dentistry",
+        key="dentistry"
+    ):
+
+        st.session_state.quick_message = (
+            "Do you have a dentist or dentistry service?"
+        )
+
+        st.rerun()
+
+
+with specialty2:
+
+    if st.button(
+        "❤️ Cardiology",
+        key="cardiology"
+    ):
+
+        st.session_state.quick_message = (
+            "Do you have a cardiologist or cardiology service?"
+        )
+
+        st.rerun()
+
+
+with specialty3:
+
+    if st.button(
+        "🦴 Orthopedics",
+        key="orthopedics"
+    ):
+
+        st.session_state.quick_message = (
+            "Do you have an orthopedic doctor or orthopedics service?"
+        )
+
+        st.rerun()
+
+
+with specialty4:
+
+    if st.button(
+        "🩺 General Medicine",
+        key="general_medicine"
+    ):
+
+        st.session_state.quick_message = (
+            "Do you have a general medicine doctor?"
+        )
+
+        st.rerun()
+
+
+# ============================================================
+# CHAT
+# ============================================================
+
+st.markdown(
+    "## 💬 Chat with CareConnect AI"
+)
+
 
 if len(st.session_state.messages) == 0:
 
     st.info(
         """
-        👋 **Hello! I'm CareConnect AI.**
+        👋 **Welcome to CareConnect AI!**
 
         I can help you with:
 
-        - 👨‍⚕️ Doctors and medical specialties
-        - 🏥 Clinic services and locations
-        - 🕒 Opening hours
-        - 📅 Appointment requests
-        - 🧠 New and existing patient support
+        • 👨‍⚕️ Doctors and medical specialties
 
-        **Try asking:**  
-        *What doctors are available at your clinic?*
+        • 🏥 Clinic services
+
+        • 🕒 Clinic timings
+
+        • 📅 Appointment requests
+
+        • 🧠 New and existing patient support
+
+        **Try asking:**
+        "What doctors are available?"
         """
     )
 
 
-# =========================================================
-# DISPLAY CHAT HISTORY
-# =========================================================
+# ============================================================
+# DISPLAY HISTORY
+# ============================================================
 
 for message in st.session_state.messages:
 
-    with st.chat_message(
-        message["role"]
-    ):
+    role = message.get(
+        "role",
+        "assistant"
+    )
 
-        st.write(
-            message["content"]
+    content = message.get(
+        "content",
+        ""
+    )
+
+    with st.chat_message(role):
+
+        st.markdown(
+            content
         )
 
 
-# =========================================================
-# USER INPUT
-# =========================================================
+# ============================================================
+# INPUT
+# ============================================================
 
 user_input = None
 
 
-# ---------------------------------------------------------
-# QUICK ACTION INPUT
-# ---------------------------------------------------------
+# ------------------------------------------------------------
+# QUICK ACTION
+# ------------------------------------------------------------
 
 if st.session_state.quick_message:
 
@@ -875,12 +717,12 @@ if st.session_state.quick_message:
     st.session_state.quick_message = None
 
 
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 # CHAT INPUT
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 
 chat_input = st.chat_input(
-    "Ask about doctors, specialties, clinic services or appointments..."
+    "Ask about doctors, specialties, services or appointments..."
 )
 
 
@@ -889,15 +731,15 @@ if chat_input:
     user_input = chat_input
 
 
-# =========================================================
-# PROCESS MESSAGE
-# =========================================================
+# ============================================================
+# PROCESS CHAT
+# ============================================================
 
 if user_input:
 
-    # -----------------------------------------------------
-    # SAVE USER MESSAGE
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # SAVE USER
+    # --------------------------------------------------------
 
     st.session_state.messages.append(
         {
@@ -907,41 +749,54 @@ if user_input:
     )
 
 
-    # -----------------------------------------------------
+    # --------------------------------------------------------
     # DISPLAY USER
-    # -----------------------------------------------------
+    # --------------------------------------------------------
 
-    with st.chat_message("user"):
+    with st.chat_message(
+        "user"
+    ):
 
-        st.write(user_input)
+        st.markdown(
+            user_input
+        )
 
 
-    # -----------------------------------------------------
-    # AI RESPONSE
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # AI
+    # --------------------------------------------------------
 
-    with st.chat_message("assistant"):
+    with st.chat_message(
+        "assistant"
+    ):
 
         if not agent_online:
 
+            error_message = (
+                "The CareConnect AI agent is currently "
+                "unavailable. Please check the deployment logs."
+            )
+
             st.error(
-                "The CareConnect AI agent could not start. "
-                "Please check the deployment logs."
+                error_message
+            )
+
+            st.session_state.messages.append(
+                {
+                    "role": "assistant",
+                    "content": error_message
+                }
             )
 
         else:
 
-            with st.spinner(
-                "CareConnect AI is thinking..."
-            ):
+            try:
 
-                try:
+                with st.spinner(
+                    "CareConnect AI is thinking..."
+                ):
 
-                    # -----------------------------------------
-                    # CALL AGENT
-                    # -----------------------------------------
-
-                    data = agent.chat(
+                    result = agent.chat(
 
                         session_id=(
                             st.session_state.session_id
@@ -951,181 +806,177 @@ if user_input:
                     )
 
 
-                    # -----------------------------------------
-                    # RESPONSE
-                    # -----------------------------------------
+                # ------------------------------------------------
+                # RESPONSE
+                # ------------------------------------------------
 
-                    answer = data.get(
+                answer = result.get(
+                    "response",
+                    "I couldn't generate a response."
+                )
 
-                        "response",
 
-                        "Sorry, I couldn't generate a response."
+                # ------------------------------------------------
+                # DISPLAY RESPONSE
+                # ------------------------------------------------
 
+                st.markdown(
+                    answer
+                )
+
+
+                # ------------------------------------------------
+                # SAVE RESPONSE
+                # ------------------------------------------------
+
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": answer
+                    }
+                )
+
+
+                # ------------------------------------------------
+                # AGENT DETAILS
+                # ------------------------------------------------
+
+                with st.expander(
+                    "🧠 Agent Decision Details"
+                ):
+
+                    detail1, detail2, detail3 = (
+                        st.columns(3)
                     )
 
 
-                    st.write(answer)
+                    # Intent
 
+                    with detail1:
 
-                    # -----------------------------------------
-                    # DECISION DETAILS
-                    # -----------------------------------------
-
-                    with st.expander(
-                        "🧠 Agent Decision Details"
-                    ):
-
-                        metric1, metric2, metric3 = (
-                            st.columns(3)
-                        )
-
-
-                        # Intent
-
-                        with metric1:
-
-                            st.metric(
-
-                                "Intent",
-
-                                data.get(
-                                    "intent",
-                                    "Unknown"
-                                )
-                            )
-
-
-                        # Patient type
-
-                        with metric2:
-
-                            patient_type = (
-                                data.get(
-                                    "patient_type"
-                                )
-                            )
-
-
-                            st.metric(
-
-                                "Patient Type",
-
-                                patient_type
-                                if patient_type
-                                else "Not Detected"
-                            )
-
-
-                        # Lead temperature
-
-                        with metric3:
-
-                            temperature = (
-                                data.get(
-                                    "lead_temperature"
-                                )
-                            )
-
-
-                            st.metric(
-
-                                "Lead Temperature",
-
-                                temperature
-                                if temperature
-                                else "Not Applicable"
-                            )
-
-
-                        # -------------------------------------
-                        # APPOINTMENT DATA
-                        # -------------------------------------
-
-                        appointment_data = (
-                            data.get(
-                                "appointment_data"
+                        st.metric(
+                            "Intent",
+                            result.get(
+                                "intent",
+                                "Unknown"
                             )
                         )
 
 
-                        if appointment_data:
+                    # Patient type
 
-                            st.markdown(
-                                "### 📋 Appointment Information"
-                            )
+                    with detail2:
 
-                            st.json(
-                                appointment_data
-                            )
+                        patient_type = result.get(
+                            "patient_type"
+                        )
 
-
-                        # -------------------------------------
-                        # SALESFORCE
-                        # -------------------------------------
-
-                        lead_id = data.get(
-                            "lead_id"
+                        st.metric(
+                            "Patient Type",
+                            patient_type
+                            if patient_type
+                            else "Not Detected"
                         )
 
 
-                        task_created = data.get(
-                            "task_created"
+                    # Temperature
+
+                    with detail3:
+
+                        temperature = result.get(
+                            "lead_temperature"
+                        )
+
+                        st.metric(
+                            "Lead Temperature",
+                            temperature
+                            if temperature
+                            else "Not Applicable"
                         )
 
 
-                        if lead_id:
+                    # ------------------------------------------------
+                    # APPOINTMENT DATA
+                    # ------------------------------------------------
 
-                            st.success(
-                                f"Salesforce Lead Created: {lead_id}"
-                            )
-
-
-                        if task_created:
-
-                            st.success(
-                                "Salesforce conversation Task "
-                                "created successfully."
-                            )
-
-
-                    # -----------------------------------------
-                    # SAVE ASSISTANT MESSAGE
-                    # -----------------------------------------
-
-                    st.session_state.messages.append(
-
-                        {
-                            "role": "assistant",
-
-                            "content": answer
-
-                        }
-
+                    appointment_data = result.get(
+                        "appointment_data"
                     )
 
 
-                except Exception as error:
+                    if appointment_data:
 
-                    st.error(
-                        f"❌ Agent Error: {error}"
+                        st.markdown(
+                            "### 📋 Appointment Details"
+                        )
+
+                        st.json(
+                            appointment_data
+                        )
+
+
+                    # ------------------------------------------------
+                    # SALESFORCE LEAD
+                    # ------------------------------------------------
+
+                    lead_id = result.get(
+                        "lead_id"
                     )
 
 
-# =========================================================
+                    if lead_id:
+
+                        st.success(
+                            "Salesforce Lead Created: "
+                            + str(lead_id)
+                        )
+
+
+                    # ------------------------------------------------
+                    # SALESFORCE TASK
+                    # ------------------------------------------------
+
+                    task_created = result.get(
+                        "task_created"
+                    )
+
+
+                    if task_created:
+
+                        st.success(
+                            "Salesforce conversation Task "
+                            "created successfully."
+                        )
+
+
+            except Exception as error:
+
+                error_message = (
+                    f"Agent Error: {error}"
+                )
+
+                st.error(
+                    error_message
+                )
+
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": error_message
+                    }
+                )
+
+
+# ============================================================
 # FOOTER
-# =========================================================
+# ============================================================
 
-st.html(
-    """
-    <div class="footer">
+st.divider()
 
-        <b>CareConnect AI</b>
-        • Intelligent Healthcare Assistant
+st.caption(
+    "🏥 CareConnect AI • Intelligent Healthcare Assistant"
+)
 
-        <br><br>
-
-        Powered by RAG • AI Agents • Salesforce
-
-    </div>
-    """
+st.caption(
+    "Powered by RAG • AI Agents • Salesforce"
 )
