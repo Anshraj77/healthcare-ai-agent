@@ -14,19 +14,39 @@ class HealthcareAgent:
 
     def __init__(self):
 
+        print("Initializing CareConnect AI Agent...")
+
         self.rag = RAGSystem()
+
         self.salesforce = SalesforceService()
+
         self.sessions = {}
+
         self.client = None
 
-        if settings.OPENAI_API_KEY:
+        api_key = getattr(
+            settings,
+            "OPENAI_API_KEY",
+            None
+        )
+
+        if api_key:
 
             self.client = OpenAI(
-                api_key=settings.OPENAI_API_KEY
+                api_key=api_key
+            )
+
+            print("OpenAI client initialized.")
+
+        else:
+
+            print(
+                "OPENAI_API_KEY not configured. "
+                "Knowledge-base fallback mode enabled."
             )
 
     # =========================================================
-    # SESSION MANAGEMENT
+    # SESSION
     # =========================================================
 
     def get_session(self, session_id):
@@ -39,16 +59,22 @@ class HealthcareAgent:
 
                 "intent": None,
 
+                "appointment_active": False,
+
                 "appointment_data": {
+
                     "name": None,
+
                     "email": None,
+
                     "phone": None,
+
                     "location": None,
+
                     "date": None,
+
                     "reason": None
                 },
-
-                "appointment_active": False,
 
                 "conversation": []
             }
@@ -67,7 +93,9 @@ class HealthcareAgent:
     ):
 
         session["conversation"].append({
+
             "role": role,
+
             "message": message
         })
 
@@ -78,8 +106,10 @@ class HealthcareAgent:
         for item in session["conversation"]:
 
             lines.append(
+
                 f"{item['role'].upper()}: "
                 f"{item['message']}"
+
             )
 
         return "\n".join(lines)
@@ -90,7 +120,7 @@ class HealthcareAgent:
 
     def detect_intent(self, message):
 
-        message = message.lower()
+        text = message.lower().strip()
 
         appointment_keywords = [
 
@@ -99,73 +129,88 @@ class HealthcareAgent:
             "booking",
             "schedule",
             "consultation",
-            "visit doctor",
+            "consult",
+            "doctor appointment",
             "see doctor",
-            "meet doctor"
+            "visit doctor",
+            "meet doctor",
+            "book doctor",
+            "want to see"
 
         ]
 
         for keyword in appointment_keywords:
 
-            if keyword in message:
+            if keyword in text:
+
                 return "appointment"
 
         return "knowledge_query"
 
     # =========================================================
-    # PATIENT TYPE DETECTION
+    # PATIENT TYPE
     # =========================================================
 
     def detect_patient_type(self, message):
 
-        message = message.lower().strip()
+        text = message.lower().strip()
 
         existing_keywords = [
 
             "existing patient",
             "already a patient",
+            "i am an existing patient",
+            "i'm an existing patient",
             "visited before",
+            "i have visited before",
             "previous appointment",
-            "my last appointment",
-            "i have visited",
+            "old patient",
+            "i was here before",
+            "i have been here before",
             "reschedule",
-            "cancel my appointment",
-            "old patient"
+            "cancel my appointment"
 
         ]
 
         new_keywords = [
 
             "new patient",
+            "i am a new patient",
+            "i'm a new patient",
             "first time",
             "first-time",
             "never visited",
-            "haven't visited",
-            "have not visited",
+            "never been here",
             "i am new",
-            "i'm new"
+            "i'm new",
+            "visiting for the first time"
 
         ]
 
         for keyword in existing_keywords:
 
-            if keyword in message:
+            if keyword in text:
+
                 return "existing"
 
         for keyword in new_keywords:
 
-            if keyword in message:
+            if keyword in text:
+
                 return "new"
 
         return None
 
     # =========================================================
-    # EMAIL EXTRACTION
+    # EMAIL
     # =========================================================
 
     def extract_email(self, message):
 
-        pattern = r'[\w\.-]+@[\w\.-]+\.\w+'
+        pattern = (
+            r"[A-Za-z0-9._%+-]+"
+            r"@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+        )
 
         match = re.search(
             pattern,
@@ -173,17 +218,18 @@ class HealthcareAgent:
         )
 
         if match:
-            return match.group()
+
+            return match.group(0)
 
         return None
 
     # =========================================================
-    # PHONE EXTRACTION
+    # PHONE
     # =========================================================
 
     def extract_phone(self, message):
 
-        pattern = r'(\+?\d[\d\s-]{8,}\d)'
+        pattern = r"(?<!\d)(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)"
 
         match = re.search(
             pattern,
@@ -192,50 +238,77 @@ class HealthcareAgent:
 
         if match:
 
-            phone = re.sub(
-                r'\D',
-                '',
-                match.group()
+            return match.group(0).strip()
+
+        # General fallback for international/other numbers
+
+        fallback_pattern = (
+            r"(?<!\d)"
+            r"\+?\d[\d\s().-]{8,}"
+            r"\d"
+            r"(?!\d)"
+        )
+
+        fallback = re.search(
+            fallback_pattern,
+            message
+        )
+
+        if fallback:
+
+            phone = fallback.group(0).strip()
+
+            digits = re.sub(
+                r"\D",
+                "",
+                phone
             )
 
-            return phone
+            if len(digits) >= 10:
+
+                return phone
 
         return None
 
     # =========================================================
-    # LOCATION EXTRACTION
+    # LOCATION
     # =========================================================
 
     def extract_location(self, message):
 
-        locations = [
+        text = message.lower()
 
-            "new delhi",
-            "delhi",
-            "mumbai",
-            "bangalore",
-            "bengaluru"
+        locations = {
 
-        ]
+            "new delhi": "New Delhi",
 
-        message_lower = message.lower()
+            "delhi": "New Delhi",
 
-        for location in locations:
+            "mumbai": "Mumbai",
 
-            if location in message_lower:
+            "bombay": "Mumbai",
 
-                if location == "delhi":
-                    return "New Delhi"
+            "bangalore": "Bangalore",
 
-                if location == "bengaluru":
-                    return "Bangalore"
+            "bengaluru": "Bangalore",
 
-                return location.title()
+            "hyderabad": "Hyderabad",
+
+            "pune": "Pune",
+
+            "chennai": "Chennai"
+        }
+
+        for key, value in locations.items():
+
+            if key in text:
+
+                return value
 
         return None
 
     # =========================================================
-    # APPOINTMENT DATA UPDATE
+    # UPDATE APPOINTMENT DATA
     # =========================================================
 
     def update_appointment_data(
@@ -246,23 +319,32 @@ class HealthcareAgent:
 
         data = session["appointment_data"]
 
-        email = self.extract_email(message)
+        email = self.extract_email(
+            message
+        )
 
         if email:
+
             data["email"] = email
 
-        phone = self.extract_phone(message)
+        phone = self.extract_phone(
+            message
+        )
 
         if phone:
+
             data["phone"] = phone
 
-        location = self.extract_location(message)
+        location = self.extract_location(
+            message
+        )
 
         if location:
+
             data["location"] = location
 
     # =========================================================
-    # MISSING FIELD
+    # REQUIRED FIELD
     # =========================================================
 
     def get_missing_field(self, data):
@@ -270,17 +352,22 @@ class HealthcareAgent:
         required_fields = [
 
             "name",
-            "email",
-            "phone",
-            "location",
-            "date",
-            "reason"
 
+            "email",
+
+            "phone",
+
+            "location",
+
+            "date",
+
+            "reason"
         ]
 
         for field in required_fields:
 
             if not data.get(field):
+
                 return field
 
         return None
@@ -294,7 +381,7 @@ class HealthcareAgent:
         questions = {
 
             "name":
-                "Sure! Please provide your full name.",
+                "Sure! May I have your full name?",
 
             "email":
                 "Please provide your email address.",
@@ -304,25 +391,28 @@ class HealthcareAgent:
 
             "location":
                 (
-                    "Which clinic location would you prefer: "
-                    "New Delhi, Mumbai, or Bangalore?"
+                    "Which clinic location would you prefer?"
                 ),
 
             "date":
                 "What is your preferred appointment date?",
 
             "reason":
-                "Please briefly tell me the reason for your visit."
-
+                (
+                    "Please briefly tell me the reason "
+                    "for your visit."
+                )
         }
 
         return questions.get(
+
             field,
+
             "Please provide the required information."
         )
 
     # =========================================================
-    # CAPTURE CURRENT FIELD
+    # CAPTURE FIELD
     # =========================================================
 
     def capture_current_field(
@@ -333,235 +423,217 @@ class HealthcareAgent:
 
         data = session["appointment_data"]
 
-        missing = self.get_missing_field(data)
+        missing_field = self.get_missing_field(
+            data
+        )
 
-        if missing is None:
+        if not missing_field:
+
             return
 
-        message_clean = message.strip()
+        clean_message = message.strip()
 
+        # -----------------------------------------------------
         # NAME
-        if missing == "name":
+        # -----------------------------------------------------
 
-            if self.detect_patient_type(message):
+        if missing_field == "name":
+
+            # Don't accidentally save "new patient"
+            # as the patient's name.
+
+            if self.detect_patient_type(
+                message
+            ):
+
                 return
 
-            if len(message_clean) >= 2:
-                data["name"] = message_clean
+            if len(clean_message) >= 2:
 
+                name = clean_message
+
+                # Remove common prefixes
+
+                name = re.sub(
+
+                    r"^(my name is|i am|i'm|name is)\s+",
+
+                    "",
+
+                    name,
+
+                    flags=re.IGNORECASE
+                )
+
+                data["name"] = name.strip()
+
+        # -----------------------------------------------------
         # EMAIL
-        elif missing == "email":
+        # -----------------------------------------------------
 
-            email = self.extract_email(message)
+        elif missing_field == "email":
+
+            email = self.extract_email(
+                message
+            )
 
             if email:
+
                 data["email"] = email
 
+        # -----------------------------------------------------
         # PHONE
-        elif missing == "phone":
+        # -----------------------------------------------------
 
-            phone = self.extract_phone(message)
+        elif missing_field == "phone":
+
+            phone = self.extract_phone(
+                message
+            )
 
             if phone:
+
                 data["phone"] = phone
 
+        # -----------------------------------------------------
         # LOCATION
-        elif missing == "location":
+        # -----------------------------------------------------
 
-            location = self.extract_location(message)
+        elif missing_field == "location":
+
+            location = self.extract_location(
+                message
+            )
 
             if location:
+
                 data["location"] = location
 
+        # -----------------------------------------------------
         # DATE
-        elif missing == "date":
+        # -----------------------------------------------------
 
-            if len(message_clean) >= 3:
-                data["date"] = message_clean
+        elif missing_field == "date":
 
+            if len(clean_message) >= 3:
+
+                data["date"] = clean_message
+
+        # -----------------------------------------------------
         # REASON
-        elif missing == "reason":
+        # -----------------------------------------------------
 
-            if len(message_clean) >= 3:
-                data["reason"] = message_clean
+        elif missing_field == "reason":
+
+            if len(clean_message) >= 3:
+
+                data["reason"] = clean_message
 
     # =========================================================
     # LEAD TEMPERATURE
     # =========================================================
 
-    def calculate_lead_temperature(self, session):
+    def calculate_lead_temperature(
+        self,
+        session
+    ):
 
         data = session["appointment_data"]
 
         conversation = (
-            self.get_conversation_text(session)
-            .lower()
+            self.get_conversation_text(
+                session
+            ).lower()
         )
 
         score = 0
 
+        # -----------------------------------------------------
+        # HIGH-INTENT / URGENT WORDS
+        # -----------------------------------------------------
+
         hot_keywords = [
 
             "urgent",
+
             "emergency",
+
             "as soon as possible",
+
             "today",
+
             "tomorrow",
+
             "immediately",
+
             "very soon",
-            "need appointment"
+
+            "need appointment",
+
+            "want appointment",
+
+            "book appointment",
+
+            "book today"
 
         ]
 
         for keyword in hot_keywords:
 
             if keyword in conversation:
+
                 score += 2
 
-        # Patient details
+        # -----------------------------------------------------
+        # INFORMATION COMPLETENESS
+        # -----------------------------------------------------
 
         if data.get("name"):
+
             score += 1
 
         if data.get("email"):
+
             score += 1
 
         if data.get("phone"):
+
             score += 1
 
         if data.get("location"):
+
             score += 1
 
         if data.get("date"):
+
             score += 2
 
         if data.get("reason"):
+
             score += 1
 
-        # Temperature
+        # -----------------------------------------------------
+        # TEMPERATURE
+        # -----------------------------------------------------
 
         if score >= 8:
+
             return "Hot"
 
         if score >= 4:
+
             return "Warm"
 
         return "Cold"
 
     # =========================================================
-    # KNOWLEDGE BASE RESPONSE
+    # SALESFORCE
     # =========================================================
 
-    def answer_from_knowledge_base(self, message):
-
-        results = self.rag.retrieve(message)
-
-        if not results:
-
-            return (
-                "I couldn't find that information in our "
-                "clinic knowledge base. Please contact "
-                "the clinic for assistance."
-            )
-
-        context = "\n\n".join(
-            [
-                result["text"]
-                for result in results
-            ]
-        )
-
-        # No OpenAI key
-
-        if not self.client:
-
-            return (
-                "Based on our clinic information:\n\n"
-                + results[0]["text"]
-            )
-
-        prompt = f"""
-
-You are CareConnect Healthcare's helpful AI assistant.
-
-Answer ONLY using the provided clinic knowledge base.
-
-Do not invent clinic information.
-
-If the answer is not available in the knowledge base,
-say that you do not have that information and suggest
-contacting the clinic.
-
-Do not diagnose medical conditions.
-
-Knowledge Base:
-
-{context}
-
-Patient Question:
-
-{message}
-
-Give a helpful, concise answer.
-
-"""
-
-        try:
-
-            model_name = getattr(
-                settings,
-                "OPENAI_MODEL",
-                "gpt-4o-mini"
-            )
-
-            response = self.client.chat.completions.create(
-
-                model=model_name,
-
-                messages=[
-
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a helpful healthcare "
-                            "clinic assistant. "
-                            "Do not provide medical diagnoses. "
-                            "For emergencies, advise the patient "
-                            "to seek immediate emergency care."
-                        )
-                    },
-
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-
-                ],
-
-                temperature=0.2
-            )
-
-            return response.choices[
-                0
-            ].message.content
-
-        except Exception as error:
-
-            print(
-                f"LLM Error: {error}"
-            )
-
-            return (
-                "I found this information in our "
-                "clinic knowledge base:\n\n"
-                + results[0]["text"]
-            )
-
-    # =========================================================
-    # SALESFORCE LEAD + TASK
-    # =========================================================
-
-    def create_salesforce_lead(self, session):
+    def create_salesforce_lead(
+        self,
+        session
+    ):
 
         data = session["appointment_data"]
 
@@ -580,7 +652,7 @@ Give a helpful, concise answer.
         # CREATE LEAD
         # -----------------------------------------------------
 
-        result = self.salesforce.create_lead(
+        lead_result = self.salesforce.create_lead(
 
             name=data.get("name"),
 
@@ -595,7 +667,7 @@ Give a helpful, concise answer.
             lead_temperature=lead_temperature
         )
 
-        if not result.get("success"):
+        if not lead_result.get("success"):
 
             return {
 
@@ -605,25 +677,33 @@ Give a helpful, concise answer.
                     lead_temperature,
 
                 "lead_result":
-                    result,
+                    lead_result,
 
                 "task_result":
                     None
             }
 
         # -----------------------------------------------------
-        # CREATE TASK
+        # LEAD ID
         # -----------------------------------------------------
 
-        lead_id = result.get(
+        lead_id = lead_result.get(
             "lead_id"
         )
+
+        # -----------------------------------------------------
+        # FULL CONVERSATION
+        # -----------------------------------------------------
 
         conversation = (
             self.get_conversation_text(
                 session
             )
         )
+
+        # -----------------------------------------------------
+        # CREATE TASK
+        # -----------------------------------------------------
 
         task_result = (
             self.salesforce.create_task(
@@ -647,14 +727,162 @@ Give a helpful, concise answer.
                 lead_temperature,
 
             "lead_result":
-                result,
+                lead_result,
 
             "task_result":
                 task_result
         }
 
     # =========================================================
-    # MAIN CHAT
+    # KNOWLEDGE BASE
+    # =========================================================
+
+    def answer_from_knowledge_base(
+        self,
+        message
+    ):
+
+        results = self.rag.retrieve(
+            message
+        )
+
+        if not results:
+
+            return (
+                "I couldn't find that information "
+                "in our clinic knowledge base. "
+                "Please contact the clinic directly "
+                "for assistance."
+            )
+
+        context = "\n\n".join(
+
+            result["text"]
+
+            for result in results
+        )
+
+        # -----------------------------------------------------
+        # NO OPENAI
+        # -----------------------------------------------------
+
+        if not self.client:
+
+            return (
+                "According to our clinic information:\n\n"
+                + results[0]["text"]
+            )
+
+        # -----------------------------------------------------
+        # OPENAI RESPONSE
+        # -----------------------------------------------------
+
+        prompt = f"""
+You are CareConnect AI, a healthcare clinic
+information and appointment assistant.
+
+Use ONLY the clinic knowledge base below
+to answer the patient's question.
+
+Do not invent:
+- doctors
+- specialties
+- clinic locations
+- timings
+- prices
+- services
+- appointment availability
+
+If the requested information is not present
+in the knowledge base, clearly say that you
+do not have that information.
+
+You may help with:
+- clinic services
+- available doctors
+- medical specialties
+- clinic locations
+- clinic timings
+- general appointment information
+
+Do not diagnose medical conditions.
+
+If the patient describes a medical emergency,
+tell them to seek immediate emergency medical care.
+
+CLINIC KNOWLEDGE BASE:
+
+{context}
+
+PATIENT QUESTION:
+
+{message}
+
+Give a concise, friendly answer.
+"""
+
+        try:
+
+            model_name = getattr(
+
+                settings,
+
+                "OPENAI_MODEL",
+
+                "gpt-4o-mini"
+            )
+
+            response = (
+                self.client.chat.completions.create(
+
+                    model=model_name,
+
+                    messages=[
+
+                        {
+                            "role": "system",
+
+                            "content":
+                                (
+                                    "You are CareConnect AI, "
+                                    "a safe healthcare clinic "
+                                    "assistant."
+                                )
+                        },
+
+                        {
+                            "role": "user",
+
+                            "content": prompt
+                        }
+                    ],
+
+                    temperature=0.2
+                )
+            )
+
+            answer = (
+                response
+                .choices[0]
+                .message
+                .content
+            )
+
+            return answer.strip()
+
+        except Exception as error:
+
+            print(
+                f"OpenAI Error: {error}"
+            )
+
+            return (
+                "According to our clinic information:\n\n"
+                + results[0]["text"]
+            )
+
+    # =========================================================
+    # MAIN CHAT FUNCTION
     # =========================================================
 
     def chat(
@@ -669,6 +897,10 @@ Give a helpful, concise answer.
 
         message = message.strip()
 
+        # -----------------------------------------------------
+        # EMPTY MESSAGE
+        # -----------------------------------------------------
+
         if not message:
 
             return {
@@ -680,7 +912,9 @@ Give a helpful, concise answer.
                     "knowledge_query",
 
                 "patient_type":
-                    session.get("patient_type"),
+                    session.get(
+                        "patient_type"
+                    ),
 
                 "lead_temperature":
                     None,
@@ -689,17 +923,22 @@ Give a helpful, concise answer.
                     None
             }
 
-        # Save user message
+        # -----------------------------------------------------
+        # SAVE USER MESSAGE
+        # -----------------------------------------------------
 
         self.add_conversation(
+
             session,
+
             "user",
+
             message
         )
 
-        # =====================================================
-        # PATIENT TYPE
-        # =====================================================
+        # -----------------------------------------------------
+        # PATIENT TYPE DETECTION
+        # -----------------------------------------------------
 
         detected_patient_type = (
             self.detect_patient_type(
@@ -713,290 +952,36 @@ Give a helpful, concise answer.
                 detected_patient_type
             )
 
+        # -----------------------------------------------------
+        # INTENT
+        # -----------------------------------------------------
+
+        detected_intent = (
+            self.detect_intent(
+                message
+            )
+        )
+
+        # If appointment flow is already active,
+        # keep appointment intent.
+
+        if session["appointment_active"]:
+
+            session["intent"] = "appointment"
+
+        else:
+
+            session["intent"] = detected_intent
+
         # =====================================================
-        # APPOINTMENT FLOW ACTIVE
+        # APPOINTMENT FLOW ALREADY ACTIVE
         # =====================================================
 
         if session["appointment_active"]:
 
-            # -----------------------------------------------
-            # Patient type not known
-            # -----------------------------------------------
-
-            if not session["patient_type"]:
-
-                response_text = (
-                    "Are you a new patient visiting "
-                    "our clinic for the first time, "
-                    "or are you an existing patient?"
-                )
-
-                self.add_conversation(
-                    session,
-                    "assistant",
-                    response_text
-                )
-
-                return {
-
-                    "response":
-                        response_text,
-
-                    "intent":
-                        "appointment",
-
-                    "patient_type":
-                        None,
-
-                    "lead_temperature":
-                        None,
-
-                    "appointment_data":
-                        session["appointment_data"]
-                }
-
-            # -----------------------------------------------
-            # Update appointment fields
-            # -----------------------------------------------
-
-            self.update_appointment_data(
-                session,
-                message
-            )
-
-            self.capture_current_field(
-                session,
-                message
-            )
-
-            data = session[
-                "appointment_data"
-            ]
-
-            missing_field = (
-                self.get_missing_field(
-                    data
-                )
-            )
-
-            # -----------------------------------------------
-            # Missing information
-            # -----------------------------------------------
-
-            if missing_field:
-
-                response_text = (
-                    self.ask_for_field(
-                        missing_field
-                    )
-                )
-
-                self.add_conversation(
-                    session,
-                    "assistant",
-                    response_text
-                )
-
-                return {
-
-                    "response":
-                        response_text,
-
-                    "intent":
-                        "appointment",
-
-                    "patient_type":
-                        session["patient_type"],
-
-                    "lead_temperature":
-                        self.calculate_lead_temperature(
-                            session
-                        ),
-
-                    "appointment_data":
-                        data
-                }
-
-            # =================================================
-            # EXISTING PATIENT
-            # =================================================
-
-            if session["patient_type"] == "existing":
-
-                session[
-                    "appointment_active"
-                ] = False
-
-                response_text = (
-
-                    "Thank you. Since you are an existing "
-                    "patient, your request has been noted. "
-                    "For appointment modifications or "
-                    "existing patient support, our clinic "
-                    "team will assist you directly."
-
-                )
-
-                self.add_conversation(
-                    session,
-                    "assistant",
-                    response_text
-                )
-
-                return {
-
-                    "response":
-                        response_text,
-
-                    "intent":
-                        "existing_patient_support",
-
-                    "patient_type":
-                        "existing",
-
-                    "lead_temperature":
-                        None,
-
-                    "appointment_data":
-                        data
-                }
-
-            # =================================================
-            # NEW PATIENT
-            # =================================================
-
-            salesforce_result = (
-                self.create_salesforce_lead(
-                    session
-                )
-            )
-
-            session[
-                "appointment_active"
-            ] = False
-
-            if salesforce_result["success"]:
-
-                lead_temperature = (
-                    salesforce_result[
-                        "lead_temperature"
-                    ]
-                )
-
-                task_result = (
-                    salesforce_result.get(
-                        "task_result"
-                    )
-                )
-
-                response_text = (
-
-                    "Thank you! Your appointment request "
-                    "has been submitted successfully. "
-                    "Our clinic team will contact you soon."
-
-                )
-
-                self.add_conversation(
-                    session,
-                    "assistant",
-                    response_text
-                )
-
-                return {
-
-                    "response":
-                        response_text,
-
-                    "intent":
-                        "appointment",
-
-                    "patient_type":
-                        session["patient_type"]
-                        or "new",
-
-                    "lead_temperature":
-                        lead_temperature,
-
-                    "lead_id":
-                        salesforce_result.get(
-                            "lead_id"
-                        ),
-
-                    "task_created":
-                        bool(
-                            task_result
-                            and task_result.get(
-                                "success"
-                            )
-                        ),
-
-                    "appointment_data":
-                        data
-                }
-
-            # =================================================
-            # SALESFORCE ERROR
-            # =================================================
-
-            response_text = (
-
-                "I collected your details, but there "
-                "was an issue submitting the request. "
-                "Please try again later or contact "
-                "the clinic directly."
-
-            )
-
-            self.add_conversation(
-                session,
-                "assistant",
-                response_text
-            )
-
-            return {
-
-                "response":
-                    response_text,
-
-                "intent":
-                    "appointment",
-
-                "patient_type":
-                    session["patient_type"],
-
-                "lead_temperature":
-                    salesforce_result.get(
-                        "lead_temperature"
-                    ),
-
-                "appointment_data":
-                    data
-            }
-
-        # =====================================================
-        # INTENT DETECTION
-        # =====================================================
-
-        intent = self.detect_intent(
-            message
-        )
-
-        session["intent"] = intent
-
-        # =====================================================
-        # START APPOINTMENT
-        # =====================================================
-
-        if intent == "appointment":
-
-            session[
-                "appointment_active"
-            ] = True
-
-            # -----------------------------------------------
-            # Ask patient type
-            # -----------------------------------------------
+            # -------------------------------------------------
+            # PATIENT TYPE NOT KNOWN
+            # -------------------------------------------------
 
             if not session["patient_type"]:
 
@@ -1006,13 +991,15 @@ Give a helpful, concise answer.
                     "appointment. Before we continue, "
                     "are you a new patient visiting our "
                     "clinic for the first time, or are "
-                    "you already an existing patient?"
-
+                    "you an existing patient?"
                 )
 
                 self.add_conversation(
+
                     session,
+
                     "assistant",
+
                     response_text
                 )
 
@@ -1036,27 +1023,239 @@ Give a helpful, concise answer.
                         ]
                 }
 
-            # -----------------------------------------------
-            # Patient type already detected
-            # -----------------------------------------------
+            # -------------------------------------------------
+            # EXISTING PATIENT
+            # -------------------------------------------------
 
-            missing = (
+            if (
+                session["patient_type"]
+                == "existing"
+            ):
+
+                session[
+                    "appointment_active"
+                ] = False
+
+                response_text = (
+
+                    "Thanks for letting me know. "
+                    "Since you're an existing patient, "
+                    "your request has been noted. "
+                    "For existing-patient appointments, "
+                    "rescheduling, or cancellations, "
+                    "our clinic team will assist you "
+                    "directly."
+                )
+
+                self.add_conversation(
+
+                    session,
+
+                    "assistant",
+
+                    response_text
+                )
+
+                return {
+
+                    "response":
+                        response_text,
+
+                    "intent":
+                        "existing_patient_support",
+
+                    "patient_type":
+                        "existing",
+
+                    "lead_temperature":
+                        None,
+
+                    "appointment_data":
+                        session[
+                            "appointment_data"
+                        ]
+                }
+
+            # -------------------------------------------------
+            # NEW PATIENT
+            # -------------------------------------------------
+
+            self.update_appointment_data(
+
+                session,
+
+                message
+            )
+
+            self.capture_current_field(
+
+                session,
+
+                message
+            )
+
+            data = session[
+                "appointment_data"
+            ]
+
+            # -------------------------------------------------
+            # FIND MISSING INFORMATION
+            # -------------------------------------------------
+
+            missing_field = (
                 self.get_missing_field(
-                    session[
-                        "appointment_data"
-                    ]
+                    data
                 )
             )
 
-            response_text = (
-                self.ask_for_field(
-                    missing
+            if missing_field:
+
+                response_text = (
+                    self.ask_for_field(
+                        missing_field
+                    )
                 )
+
+                self.add_conversation(
+
+                    session,
+
+                    "assistant",
+
+                    response_text
+                )
+
+                return {
+
+                    "response":
+                        response_text,
+
+                    "intent":
+                        "appointment",
+
+                    "patient_type":
+                        session[
+                            "patient_type"
+                        ],
+
+                    "lead_temperature":
+                        self.calculate_lead_temperature(
+                            session
+                        ),
+
+                    "appointment_data":
+                        data
+                }
+
+            # -------------------------------------------------
+            # ALL DETAILS COLLECTED
+            # -------------------------------------------------
+
+            salesforce_result = (
+                self.create_salesforce_lead(
+                    session
+                )
+            )
+
+            session[
+                "appointment_active"
+            ] = False
+
+            # -------------------------------------------------
+            # SUCCESS
+            # -------------------------------------------------
+
+            if salesforce_result[
+                "success"
+            ]:
+
+                lead_temperature = (
+                    salesforce_result[
+                        "lead_temperature"
+                    ]
+                )
+
+                task_result = (
+                    salesforce_result.get(
+                        "task_result"
+                    )
+                )
+
+                task_created = (
+
+                    task_result is not None
+
+                    and
+
+                    task_result.get(
+                        "success",
+                        False
+                    )
+                )
+
+                response_text = (
+
+                    "Thank you! Your appointment "
+                    "request has been submitted "
+                    "successfully. Our clinic team "
+                    "will contact you soon."
+                )
+
+                self.add_conversation(
+
+                    session,
+
+                    "assistant",
+
+                    response_text
+                )
+
+                return {
+
+                    "response":
+                        response_text,
+
+                    "intent":
+                        "appointment",
+
+                    "patient_type":
+                        session[
+                            "patient_type"
+                        ],
+
+                    "lead_temperature":
+                        lead_temperature,
+
+                    "lead_id":
+                        salesforce_result.get(
+                            "lead_id"
+                        ),
+
+                    "task_created":
+                        task_created,
+
+                    "appointment_data":
+                        data
+                }
+
+            # -------------------------------------------------
+            # SALESFORCE FAILURE
+            # -------------------------------------------------
+
+            response_text = (
+
+                "I collected your appointment "
+                "details, but there was an issue "
+                "submitting the request. Please try "
+                "again or contact the clinic directly."
             )
 
             self.add_conversation(
+
                 session,
+
                 "assistant",
+
                 response_text
             )
 
@@ -1069,7 +1268,163 @@ Give a helpful, concise answer.
                     "appointment",
 
                 "patient_type":
-                    session["patient_type"],
+                    session[
+                        "patient_type"
+                    ],
+
+                "lead_temperature":
+                    salesforce_result.get(
+                        "lead_temperature"
+                    ),
+
+                "appointment_data":
+                    data
+            }
+
+        # =====================================================
+        # START NEW APPOINTMENT FLOW
+        # =====================================================
+
+        if detected_intent == "appointment":
+
+            session[
+                "appointment_active"
+            ] = True
+
+            # -------------------------------------------------
+            # ASK PATIENT TYPE
+            # -------------------------------------------------
+
+            if not session["patient_type"]:
+
+                response_text = (
+
+                    "I'd be happy to help you "
+                    "request an appointment. "
+                    "First, are you a new patient "
+                    "visiting our clinic for the "
+                    "first time, or are you an "
+                    "existing patient?"
+                )
+
+                self.add_conversation(
+
+                    session,
+
+                    "assistant",
+
+                    response_text
+                )
+
+                return {
+
+                    "response":
+                        response_text,
+
+                    "intent":
+                        "appointment",
+
+                    "patient_type":
+                        None,
+
+                    "lead_temperature":
+                        None,
+
+                    "appointment_data":
+                        session[
+                            "appointment_data"
+                        ]
+                }
+
+            # -------------------------------------------------
+            # EXISTING PATIENT
+            # -------------------------------------------------
+
+            if (
+                session["patient_type"]
+                == "existing"
+            ):
+
+                session[
+                    "appointment_active"
+                ] = False
+
+                response_text = (
+
+                    "Thanks for letting me know "
+                    "you're an existing patient. "
+                    "Our clinic team can help you "
+                    "with your appointment request, "
+                    "rescheduling, or other existing-"
+                    "patient needs."
+                )
+
+                self.add_conversation(
+
+                    session,
+
+                    "assistant",
+
+                    response_text
+                )
+
+                return {
+
+                    "response":
+                        response_text,
+
+                    "intent":
+                        "existing_patient_support",
+
+                    "patient_type":
+                        "existing",
+
+                    "lead_temperature":
+                        None,
+
+                    "appointment_data":
+                        session[
+                            "appointment_data"
+                        ]
+                }
+
+            # -------------------------------------------------
+            # NEW PATIENT
+            # -------------------------------------------------
+
+            missing_field = (
+                self.get_missing_field(
+                    session[
+                        "appointment_data"
+                    ]
+                )
+            )
+
+            response_text = (
+                self.ask_for_field(
+                    missing_field
+                )
+            )
+
+            self.add_conversation(
+
+                session,
+
+                "assistant",
+
+                response_text
+            )
+
+            return {
+
+                "response":
+                    response_text,
+
+                "intent":
+                    "appointment",
+
+                "patient_type":
+                    "new",
 
                 "lead_temperature":
                     self.calculate_lead_temperature(
@@ -1083,7 +1438,7 @@ Give a helpful, concise answer.
             }
 
         # =====================================================
-        # KNOWLEDGE BASE
+        # NORMAL KNOWLEDGE QUESTION
         # =====================================================
 
         answer = (
@@ -1093,8 +1448,11 @@ Give a helpful, concise answer.
         )
 
         self.add_conversation(
+
             session,
+
             "assistant",
+
             answer
         )
 
@@ -1107,7 +1465,9 @@ Give a helpful, concise answer.
                 "knowledge_query",
 
             "patient_type":
-                session["patient_type"],
+                session.get(
+                    "patient_type"
+                ),
 
             "lead_temperature":
                 None,

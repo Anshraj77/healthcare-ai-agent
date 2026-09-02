@@ -75,3 +75,42 @@ PAYMENT
 We accept major credit cards, debit cards, and selected insurance providers.
 
 Please contact the clinic directly for insurance verification.
+==================================================
+AVAILABLE DOCTORS AND SPECIALTIES
+==================================================
+
+CareConnect provides access to doctors across multiple
+medical specialties.
+
+Available specialties include:
+
+1. General Medicine
+   - General physician consultations
+   - Routine health evaluations
+   - Common illnesses and health concerns
+
+2. Cardiology
+   - Heart and cardiovascular consultations
+   - Blood pressure and heart-related concerns
+
+3. Orthopedics
+   - Bone and joint consultations
+   - Back pain, fractures, and musculoskeletal concerns
+
+4. Dentistry
+   - Dental consultations
+   - Tooth and gum concerns
+   - General dental care
+
+5. Dermatology
+   - Skin consultations
+   - Acne, rashes, and other skin concerns
+
+6. Ophthalmology
+   - Eye consultations
+   - Vision and eye-related concerns
+
+To request an appointment, the patient can tell
+CareConnect which specialty they would like to consult.
+The AI will then collect the required appointment
+information.
