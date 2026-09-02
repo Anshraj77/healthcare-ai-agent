@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+streamlit
+python-dotenv
+requests
+beautifulsoup4
+scikit-learn
+numpy
+openai
+pydantic
+simple-salesforce
+sentence_transformers

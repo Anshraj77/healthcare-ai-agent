@@ -1,0 +1,77 @@
+WELCOME TO CARECONNECT HEALTHCARE
+
+CareConnect Healthcare is a multi-location healthcare clinic providing
+primary care, preventive healthcare, specialist consultations, and wellness services.
+
+LOCATIONS
+
+We currently operate in:
+
+1. New Delhi
+Address: 25 Health Avenue, New Delhi
+Hours: Monday to Saturday, 9 AM to 7 PM
+
+2. Mumbai
+Address: 18 Wellness Road, Mumbai
+Hours: Monday to Saturday, 9 AM to 7 PM
+
+3. Bangalore
+Address: 42 Medical Park, Bangalore
+Hours: Monday to Saturday, 8 AM to 8 PM
+
+SERVICES
+
+Our services include:
+
+- General Physician Consultations
+- Preventive Health Checkups
+- Cardiology
+- Dermatology
+- Pediatrics
+- Women's Health
+- Diabetes Management
+- Nutrition Counseling
+
+APPOINTMENTS
+
+New patients can request an appointment through our website or AI assistant.
+
+To request an appointment, patients need to provide:
+
+- Full Name
+- Email Address
+- Phone Number
+- Preferred Clinic Location
+- Preferred Appointment Date
+- Reason for Visit
+
+EXISTING PATIENTS
+
+Existing patients can:
+
+- Ask general questions
+- Request appointment support
+- Ask about clinic services
+- Contact the clinic for rescheduling or cancellations
+
+For appointment modifications, existing patients should be directed to clinic support.
+
+CLINIC HOURS
+
+Monday to Saturday:
+9:00 AM to 7:00 PM
+
+Sunday:
+Closed
+
+EMERGENCY NOTICE
+
+CareConnect Healthcare is not an emergency service.
+
+If you are experiencing a medical emergency, please contact your local emergency services immediately.
+
+PAYMENT
+
+We accept major credit cards, debit cards, and selected insurance providers.
+
+Please contact the clinic directly for insurance verification.
