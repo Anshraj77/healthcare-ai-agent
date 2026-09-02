@@ -3,11 +3,10 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
 class RAGSystem:
 
     def __init__(self):
+
         print("Loading embedding model...")
 
         self.model = SentenceTransformer(
@@ -21,9 +20,13 @@ class RAGSystem:
 
     def load_knowledge_base(self):
 
-        file_path = "knowledge_base/clinic_info.txt"
+        file_path = os.path.join(
+            "knowledge_base",
+            "clinic_info.txt"
+        )
 
         if not os.path.exists(file_path):
+
             raise FileNotFoundError(
                 f"Knowledge base not found: {file_path}"
             )
@@ -44,7 +47,8 @@ class RAGSystem:
         )
 
         print(
-            f"Knowledge base loaded with {len(self.chunks)} chunks"
+            f"Knowledge base loaded with "
+            f"{len(self.chunks)} chunks"
         )
 
     def chunk_text(
@@ -62,11 +66,13 @@ class RAGSystem:
 
             end = start + chunk_size
 
-            chunk = text[start:end]
+            chunks.append(
+                text[start:end]
+            )
 
-            chunks.append(chunk)
-
-            start += chunk_size - overlap
+            start += (
+                chunk_size - overlap
+            )
 
         return chunks
 
@@ -96,7 +102,9 @@ class RAGSystem:
 
             results.append({
                 "text": self.chunks[index],
-                "score": float(similarities[index])
+                "score": float(
+                    similarities[index]
+                )
             })
 
         return results
@@ -107,7 +115,9 @@ class RAGSystem:
         document_embeddings
     ):
 
-        query_norm = np.linalg.norm(query_embedding)
+        query_norm = np.linalg.norm(
+            query_embedding
+        )
 
         document_norms = np.linalg.norm(
             document_embeddings,
@@ -115,7 +125,8 @@ class RAGSystem:
         )
 
         denominator = (
-            document_norms * query_norm
+            document_norms *
+            query_norm
         )
 
         denominator = np.where(
